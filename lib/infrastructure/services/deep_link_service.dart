@@ -5,6 +5,7 @@ import 'package:squadupv2/core/event_bus.dart';
 import 'package:squadupv2/infrastructure/services/terra_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:squadupv2/core/router/app_router.dart';
+import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 /// Deep link events
 class DeepLinkReceivedEvent extends AppEvent {
@@ -28,7 +29,7 @@ class DeepLinkService {
         await _handleDeepLink(initialUri);
       }
     } catch (e) {
-      print('Error handling initial deep link: $e');
+      logger.error('Error handling initial deep link', e);
     }
 
     // Listen for subsequent deep links
@@ -39,7 +40,7 @@ class DeepLinkService {
         }
       },
       onError: (error) {
-        print('Error handling deep link: $error');
+        logger.error('Error handling deep link', error);
       },
     );
   }

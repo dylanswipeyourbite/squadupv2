@@ -4,6 +4,7 @@ import 'package:squadupv2/core/constants/environment.dart';
 import 'package:squadupv2/core/service_locator.dart';
 import 'package:squadupv2/core/event_bus.dart';
 import 'package:squadupv2/infrastructure/services/auth_service.dart';
+import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 /// Terra integration events
 class TerraConnectionEvent extends AppEvent {
@@ -95,7 +96,9 @@ class TerraService {
   /// Generate authentication URL for a provider
   Future<String> generateAuthUrl(TerraProvider provider) async {
     final user = _authService.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
 
     try {
       final response = await http.post(
@@ -128,7 +131,9 @@ class TerraService {
   /// Disconnect a provider
   Future<void> disconnectProvider(TerraProvider provider) async {
     final user = _authService.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
 
     try {
       final response = await http.delete(
@@ -154,7 +159,9 @@ class TerraService {
   /// Get connected providers for the current user
   Future<List<TerraProvider>> getConnectedProviders() async {
     final user = _authService.currentUser;
-    if (user == null) return [];
+    if (user == null) {
+      return [];
+    }
 
     try {
       final response = await http.get(
@@ -188,7 +195,7 @@ class TerraService {
         throw Exception('Failed to get connected providers: ${response.body}');
       }
     } catch (e) {
-      print('Error getting connected providers: $e');
+      logger.error('Error getting connected providers', e);
       return [];
     }
   }
@@ -200,7 +207,9 @@ class TerraService {
     int limit = 50,
   }) async {
     final user = _authService.currentUser;
-    if (user == null) return [];
+    if (user == null) {
+      return [];
+    }
 
     final now = DateTime.now();
     final start = startDate ?? now.subtract(const Duration(days: 7));
@@ -235,7 +244,7 @@ class TerraService {
         throw Exception('Failed to fetch activities: ${response.body}');
       }
     } catch (e) {
-      print('Error fetching activities: $e');
+      logger.error('Error fetching activities', e);
       return [];
     }
   }
@@ -246,7 +255,9 @@ class TerraService {
     required DateTime endDate,
   }) async {
     final user = _authService.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
 
     try {
       final response = await http.post(

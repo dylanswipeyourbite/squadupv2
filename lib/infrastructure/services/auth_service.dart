@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:squadupv2/core/service_locator.dart';
 import 'package:squadupv2/core/event_bus.dart';
+import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 /// Authentication events
 class AuthStateChangedEvent extends AppEvent {
@@ -140,7 +141,7 @@ class AuthService {
       // Set the Supabase session
       await _supabase.auth.recoverSession(sessionData['session']);
     } catch (e) {
-      print('Error bridging to Supabase: $e');
+      logger.error('Error bridging to Supabase', e);
       _eventBus.fire(AuthErrorEvent('Failed to sync with server'));
     }
   }

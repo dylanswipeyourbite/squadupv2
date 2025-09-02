@@ -10,6 +10,9 @@ import 'package:squadupv2/infrastructure/services/squad_service.dart';
 import 'package:squadupv2/infrastructure/services/race_service.dart';
 import 'package:squadupv2/infrastructure/services/deep_link_service.dart';
 import 'package:squadupv2/core/event_bus.dart';
+import 'package:squadupv2/presentation/view_models/login_view_model.dart';
+import 'package:squadupv2/presentation/view_models/signup_view_model.dart';
+import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 final GetIt locator = GetIt.instance;
 
@@ -43,7 +46,11 @@ Future<void> setupServiceLocator() async {
   );
 
   // ViewModels - Register as factories with parameters
-  // These will be registered as we create them
+  locator.registerFactory(() => LoginViewModel(locator<AuthService>()));
+  locator.registerFactory(() => SignupViewModel(locator<AuthService>()));
+
+  // Logger service - singleton
+  locator.registerLazySingleton<LoggerService>(() => LoggerService());
 }
 
 /// Extension for easier access in widgets (optional but convenient)

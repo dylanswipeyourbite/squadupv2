@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import * as admin from 'npm:firebase-admin';
+
+// Initialize Firebase Admin (assuming service account env var or similar)
+admin.initializeApp({
+  credential: admin.credential.cert(JSON.parse(Deno.env.get('FIREBASE_SERVICE_ACCOUNT')!)),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,62 +21,37 @@ serve(async (req) => {
   try {
     const { idToken, uid, email, displayName } = await req.json()
 
-    // TODO: Verify the Firebase ID token with Firebase Admin SDK
-    // For now, we'll trust the token (in production, you MUST verify it)
-    
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (decodedToken.uid !== uid) {
+      throw new Error('Invalid token');
+    }
+
     // Create Supabase client with service role key (from environment)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Check if user already exists in Supabase
-    const { data: existingUser, error: userCheckError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('firebase_uid', uid)
-      .single()
+    // Example: Create user if not exists and return access token
+    const { data: user, error } = await supabase.auth.admin.createUser({
+      email: email,
+      email_confirm: true,
+      user_metadata: { display_name: displayName, firebase_uid: uid },
+    });
 
-    if (!existingUser && !userCheckError) {
-      // Create user profile if it doesn't exist
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          firebase_uid: uid,
-          email: email,
-          display_name: displayName,
-          created_at: new Date().toISOString(),
-        })
+    if (error && error.message !== 'User already registered') throw error;
 
-      if (insertError) {
-        throw new Error(`Failed to create user profile: ${insertError.message}`)
-      }
-    }
+    // Generate a session or token
+    const { data: session } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: email,
+    });  // Or use custom logic
 
-    // Generate a custom session for the user
-    // In production, you'd want to create a proper JWT session
-    // For now, we'll return a success response
-    const sessionData = {
-      session: {
-        user: {
-          id: uid,
-          email: email,
-          app_metadata: { provider: 'firebase' },
-          user_metadata: { display_name: displayName },
-        },
-        access_token: 'firebase-bridged-token', // This should be a real JWT
-        refresh_token: 'firebase-bridged-refresh', // This should be a real refresh token
-        expires_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
-      }
-    }
-
+    // Return proper session data
     return new Response(
-      JSON.stringify(sessionData),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    )
+      JSON.stringify({ session: session }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+    );
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),

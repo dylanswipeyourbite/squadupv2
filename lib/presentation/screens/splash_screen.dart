@@ -30,32 +30,42 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (user == null) {
       // Not authenticated, go to login
-      context.go(AppRoutes.login);
+      if (mounted) {
+        context.go(AppRoutes.login);
+      }
       return;
     }
 
     // Check onboarding status
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final hasCompletedOnboarding =
         prefs.getBool('hasCompletedOnboarding') ?? false;
 
     if (!hasCompletedOnboarding) {
       // Go to onboarding
-      context.go(AppRoutes.welcome);
+      if (mounted) {
+        context.go(AppRoutes.welcome);
+      }
       return;
     }
 
     // Check if user has a squad
+    if (!mounted) return;
     final hasSquad = prefs.getBool('hasSquad') ?? false;
 
     if (!hasSquad) {
       // No squad, go to squad choice
-      context.go(AppRoutes.squadChoice);
+      if (mounted) {
+        context.go(AppRoutes.squadChoice);
+      }
       return;
     }
 
     // All set, go to home
-    context.go(AppRoutes.home);
+    if (mounted) {
+      context.go(AppRoutes.home);
+    }
   }
 
   @override

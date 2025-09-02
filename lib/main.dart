@@ -6,9 +6,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'core/constants/environment.dart';
 import 'core/router/app_router.dart';
+import 'infrastructure/services/logger_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize logger first
+  logger.init(isProduction: const bool.fromEnvironment('dart.vm.product'));
 
   // Initialize all services
   await Future.wait([
