@@ -1,0 +1,21 @@
+:root{--bg:#0b0c10;--panel:#111217;--ink:#e5e7eb;--muted:#9aa0a6;--border:#22242a;--accent:#7c4dff}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Helvetica,Arial}
+header{padding:24px 20px;border-bottom:1px solid var(--border)}
+h1{margin:0 0 6px;font-size:22px}
+main{padding:20px}
+.grid{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:0;margin:0}
+.grid a{display:block;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--ink);text-decoration:none}
+.grid a:hover{border-color:var(--accent)}
+.screen{max-width:420px;margin:24px auto;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--panel)}
+.appbar{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.title{font-weight:700}
+.section{padding:12px 0;border-top:1px solid var(--border)}
+.field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:white;text-decoration:none;border:none;cursor:pointer}
+.btn.secondary{background:transparent;border:1px solid var(--border);color:var(--ink)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{padding:10px;border:1px solid var(--border);border-radius:12px}
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#1f2937;color:#cbd5e1;font-size:12px}
+input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:#0f1115;color:var(--ink)}
+label{font-size:13px;color:var(--muted)}
+
