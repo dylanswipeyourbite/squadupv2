@@ -1,11 +1,11 @@
 SquadUp development directive
 
 Read these before any task and align your work accordingly:
-- squadup vision: `project_info/general/squadup_vision.md`
-- architecture decisions: `project_info/general/squadup_architecture_decisions.md`
-- development guidelines: `project_info/general/squadup_development_guidelines.md`
-- house style guide: `project_info/general/house_style_guide.md` (if missing, follow the “Code Style” and UI rules in the development guidelines)
-- mode framework: `project_info/general/mode_framework.md`
+- squadup vision: `docs/squadup_vision.md`
+- architecture decisions: `docs/squadup_architecture_decisions.md`
+- development guidelines: `docs/squadup_development_guidelines.md`
+- house style guide: `docs/house_style_guide.md` (if missing, follow the “Code Style” and UI rules in the development guidelines)
+- wireframes: `docs/wireframes/` 
 
 What to keep top‑of‑mind
 - Vision alignment
@@ -20,7 +20,8 @@ What to keep top‑of‑mind
   - No direct Supabase calls in UI; use services/repositories
   - Use Material 3; no hardcoded colors; use theme and `context.squadUpTheme`
   - Use `FeedbackService`, not SnackBars
-  - Don't apply for quick fixes, and go for the long term solution qinstead
+  - Don't apply for quick fixes, and go for the long term solution instead
+  - Wireframes serve as an example, if there's a more UX friendly or beautiful way to implement the UI please do so
 - Terra integration
   - Use shared mappings: `shared/constants/terra-data-types.json`, `shared/constants/terra-activity-mapping.json`
   - Store activity data in 3 tiers: `activities` (core), `activity_details` (summaries), `activity_raw_archive` (compressed raw)
@@ -28,7 +29,7 @@ What to keep top‑of‑mind
   - Map Terra enums by ID; don’t invent values
 - Modes (experts)
   - v1 experts: General “Sage”, Coach “Alex”, Analyst “Nova”, Nutritionist “Aria”, Strategist “Pace”, Recovery/PT “Koa”
-  - Evidence-only: ground answers in squad data or refuse with “Not enough squad data…”
+  - Evidence-only: ground answers in squad data, but always try to answer in a relevant way
   - Within-squad data is accessible by default; respect redaction flags
   - Budget: cap €1/squad/month; degrade (shorter/context-limited) → refuse
   - Tone: match squad vibe (clear, empathetic when needed; never copy errors)
