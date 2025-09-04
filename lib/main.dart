@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:squadupv2/core/service_locator.dart';
 import 'package:squadupv2/core/theme/squadup_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

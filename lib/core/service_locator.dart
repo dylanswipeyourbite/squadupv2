@@ -9,9 +9,11 @@ import 'package:squadupv2/infrastructure/services/activity_service.dart';
 import 'package:squadupv2/infrastructure/services/squad_service.dart';
 import 'package:squadupv2/infrastructure/services/race_service.dart';
 import 'package:squadupv2/infrastructure/services/deep_link_service.dart';
+import 'package:squadupv2/infrastructure/services/onboarding_service.dart';
 import 'package:squadupv2/core/event_bus.dart';
 import 'package:squadupv2/presentation/view_models/login_view_model.dart';
 import 'package:squadupv2/presentation/view_models/signup_view_model.dart';
+import 'package:squadupv2/presentation/view_models/onboarding_chat_view_model.dart';
 import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 final GetIt locator = GetIt.instance;
@@ -28,6 +30,7 @@ Future<void> setupServiceLocator() async {
   // Infrastructure services
   locator.registerLazySingleton(() => TerraService());
   locator.registerLazySingleton(() => DeepLinkService());
+  locator.registerLazySingleton(() => OnboardingService());
 
   // Domain services
   locator.registerLazySingleton(() => ActivityService());
@@ -48,6 +51,9 @@ Future<void> setupServiceLocator() async {
   // ViewModels - Register as factories with parameters
   locator.registerFactory(() => LoginViewModel(locator<AuthService>()));
   locator.registerFactory(() => SignupViewModel(locator<AuthService>()));
+  locator.registerFactory(
+    () => OnboardingChatViewModel(locator<OnboardingService>()),
+  );
 
   // Logger service - singleton
   locator.registerLazySingleton<LoggerService>(() => LoggerService());

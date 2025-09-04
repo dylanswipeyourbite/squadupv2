@@ -135,16 +135,24 @@ class AuthService {
         throw Exception('Failed to bridge session: ${response.data}');
       }
 
-      // The Edge Function should return a Supabase session
-      final sessionData = response.data as Map<String, dynamic>;
+      // The Edge Function returns session data and profile_id
+      final responseData = response.data as Map<String, dynamic>;
+      final sessionData = responseData['session'] as Map<String, dynamic>;
 
-      // Set the Supabase session
-      await _supabase.auth.recoverSession(sessionData['session']);
+      // For now, we'll just store the profile ID
+      // In production, you would set a proper Supabase session
+
+      // Store the profile ID for quick access
+      _currentProfileId = responseData['profile_id'];
     } catch (e) {
       logger.error('Error bridging to Supabase', e);
       _eventBus.fire(AuthErrorEvent('Failed to sync with server'));
     }
   }
+
+  /// Current profile ID from Supabase
+  String? _currentProfileId;
+  String? get currentProfileId => _currentProfileId;
 
   /// Map Firebase exceptions to user-friendly messages
   String _mapFirebaseAuthException(firebase_auth.FirebaseAuthException e) {

@@ -6,6 +6,7 @@ import 'package:squadupv2/presentation/screens/splash_screen.dart';
 import 'package:squadupv2/presentation/screens/auth/login_screen.dart';
 import 'package:squadupv2/presentation/screens/auth/signup_screen.dart';
 import 'package:squadupv2/presentation/screens/onboarding/welcome_screen.dart';
+import 'package:squadupv2/presentation/screens/onboarding/onboarding_chat_screen.dart';
 // import 'package:squadupv2/presentation/screens/onboarding/why_run_screen.dart';
 import 'package:squadupv2/presentation/screens/onboarding/squad_choice_screen.dart';
 import 'package:squadupv2/presentation/screens/home_screen.dart';
@@ -25,6 +26,7 @@ class AppRoutes {
   static const login = '/login';
   static const signup = '/signup';
   static const welcome = '/welcome';
+  static const onboardingChat = '/onboarding/chat';
   static const whyRun = '/onboarding/why-run';
   static const squadChoice = '/onboarding/squad-choice';
   static const home = '/home';
@@ -62,6 +64,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.welcome,
       builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.onboardingChat,
+      builder: (context, state) => const OnboardingChatScreen(),
+      redirect: _authGuard,
     ),
     // GoRoute(
     //   path: AppRoutes.whyRun,
@@ -161,6 +168,11 @@ Future<String?> _authGuard(BuildContext context, GoRouterState state) async {
       prefs.getBool('hasCompletedOnboarding') ?? false;
 
   if (!hasCompletedOnboarding) {
+    // Allow onboarding-related routes
+    if (state.matchedLocation == AppRoutes.welcome ||
+        state.matchedLocation == AppRoutes.onboardingChat) {
+      return null;
+    }
     // Not completed onboarding, redirect to welcome
     return AppRoutes.welcome;
   }

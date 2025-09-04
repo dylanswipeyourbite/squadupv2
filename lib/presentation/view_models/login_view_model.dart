@@ -12,8 +12,12 @@ class LoginViewModel extends ChangeNotifier {
   Future<void> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       await _authService.signIn(email: email, password: password);
+    } catch (e) {
+      // Error is already mapped in AuthService
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
