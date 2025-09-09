@@ -151,7 +151,7 @@ Expert flow (functional behavior):
 
 - **Supabase Auth** for user identity (migrated from Firebase Auth)
 - Supabase client configured via `GetIt` service locator
-- Supabase Edge Functions: `create-squad`, `onboarding-assistant` (implemented)
+- Supabase Edge Functions: Primary backend layer for secure data operations (e.g., create-squad, onboarding-assistant, and all DB reads/writes). See `docs/edge_functions_security_migration.md` for details.
 - Terraforming service integration (Terra REST APIs via `TerraService` implementation)
  - GPT/LLM via Supabase Edge Functions for Expert Assistants and Conversational Onboarding (prompt orchestration, persona conditioning, retrieval of relevant activity/conversation/race context)
 
@@ -160,6 +160,7 @@ Expert flow (functional behavior):
 - Supabase RLS enforced on tables; **profiles table linked via `auth.users.id`** (migrated from Firebase UID)
 - Invite codes control access to private squads; no public discovery
 - Terra privacy copy in UI; only essential activity fields are processed and shared
+- Security & data isolation: Primarily enforced via Edge functions with manual auth/permission checks; Supabase Row Level Security (RLS) used as a secondary layer. Client uses Supabase Auth sessions directly; unauthorized access denied by function logic. Details in `docs/edge_functions_security_migration.md`.
 
 ### 9. Non-Functional Requirements (observed)
 
@@ -167,7 +168,6 @@ Expert flow (functional behavior):
 - Reliability: retries/guards around RLS/Edge Function boundaries
 - UX: dark theme, accessible defaults, haptics on critical actions
 - Internationalization: dependencies present (`intl`), copy currently English-only
- - Security & data isolation: Supabase Row Level Security (RLS) enforces per-squad/ per-user isolation on all data tables; least-privilege policies are required for writes, and privileged operations run via Edge Functions with service-role keys. **Client uses Supabase Auth sessions directly** (migrated from Firebase bridging); unauthorized access attempts are denied by RLS.
 
 ### 10. Known Constraints / Legacy Notes
 
