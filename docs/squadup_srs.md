@@ -16,7 +16,7 @@
 
 - Flutter, Dart 3, Provider for state
 - Navigation via `go_router`
-- Firebase Core/Auth for sign in/up
+- **Supabase Auth** for sign in/up (migrated from Firebase Auth)
 - Supabase: PostgreSQL, Realtime, RLS, Edge Functions
 - Firebase Storage for media (images/voice/video) [present in deps; UI supports send hooks]
 - Local: `shared_preferences` for onboarding flags and cached values
@@ -44,15 +44,15 @@
 - `/settings/notifications` → `NotificationSettingsScreen`
 - `/activities/checkin` → `ActivityCheckInScreen` (expects `extra` with Terra data)
 
-Auth guard and onboarding gating are enforced in `app_router.dart` using FirebaseAuth and `SharedPreferences` flags: `hasCompletedOnboarding`, `hasSquad`.
+Auth guard and onboarding gating are enforced in `app_router.dart` using **Supabase Auth** and `SharedPreferences` flags: `hasCompletedOnboarding`, `hasSquad`.
 
 ### 5. Functional Requirements
 
 5.1 Authentication & Account
-- As a new user, I want to sign up with email and password, so I can create a secure account. (Firebase Authentication)
-- As a returning user, I want to sign in with my credentials, so I can access my squads and data. (Firebase Authentication)
-- As a user, I want to reset my password, so I can regain access if I forget it. (Firebase Authentication)
-- As a user, I want my identity linked to my profile in the database, so my activities, squads, and messages remain consistent across sessions. (Supabase user profile)
+- As a new user, I want to sign up with email and password, so I can create a secure account. (**Supabase Authentication**)
+- As a returning user, I want to sign in with my credentials, so I can access my squads and data. (**Supabase Authentication**)
+- As a user, I want to reset my password, so I can regain access if I forget it. (**Supabase Authentication**)
+- As a user, I want my identity linked to my profile in the database, so my activities, squads, and messages remain consistent across sessions. (Supabase user profile linked via `auth.users.id`)
 
 5.2 Conversational Onboarding (AI-led)
 - As a new user, I want a short conversational onboarding with an AI assistant, so the app quickly understands my goals, experience, and constraints (e.g., weekly time, injury history).
@@ -149,15 +149,15 @@ Expert flow (functional behavior):
 
 ### 6. External Services and Integrations
 
-- Firebase Auth for user identity
-- Supabase client configured with Firebase ID token via `GetIt` service locator
-- Supabase Edge Functions: `create-squad` (implemented)
+- **Supabase Auth** for user identity (migrated from Firebase Auth)
+- Supabase client configured via `GetIt` service locator
+- Supabase Edge Functions: `create-squad`, `onboarding-assistant` (implemented)
 - Terraforming service integration (Terra REST APIs via `TerraService` implementation)
  - GPT/LLM via Supabase Edge Functions for Expert Assistants and Conversational Onboarding (prompt orchestration, persona conditioning, retrieval of relevant activity/conversation/race context)
 
 ### 8. Security and Privacy (implemented behaviors)
 
-- Supabase RLS assumed on tables; client inserts either after bridging session or via Edge Function
+- Supabase RLS enforced on tables; **profiles table linked via `auth.users.id`** (migrated from Firebase UID)
 - Invite codes control access to private squads; no public discovery
 - Terra privacy copy in UI; only essential activity fields are processed and shared
 
@@ -167,11 +167,11 @@ Expert flow (functional behavior):
 - Reliability: retries/guards around RLS/Edge Function boundaries
 - UX: dark theme, accessible defaults, haptics on critical actions
 - Internationalization: dependencies present (`intl`), copy currently English-only
- - Security & data isolation: Supabase Row Level Security (RLS) enforces per-squad/ per-user isolation on all data tables; least-privilege policies are required for writes, and privileged operations run via Edge Functions with service-role keys. Client requests must carry Firebase → Supabase bridged sessions; unauthorized access attempts are denied by RLS.
+ - Security & data isolation: Supabase Row Level Security (RLS) enforces per-squad/ per-user isolation on all data tables; least-privilege policies are required for writes, and privileged operations run via Edge Functions with service-role keys. **Client uses Supabase Auth sessions directly** (migrated from Firebase bridging); unauthorized access attempts are denied by RLS.
 
 ### 10. Known Constraints / Legacy Notes
 
-- Dual auth (Firebase + Supabase) requires session bridging for RLS-protected writes
+- **Migration completed**: Moved from Firebase Auth to Supabase Auth for unified authentication
 - Some media/video playback flows are stubbed with toasts; storage uploads handled in ViewModel layer
 - Vault AI features are present in services but largely disabled in UI by default (autocomplete off)
 

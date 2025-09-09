@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:squadupv2/presentation/screens/splash_screen.dart';
 import 'package:squadupv2/presentation/screens/auth/login_screen.dart';
@@ -19,6 +18,7 @@ import 'package:squadupv2/presentation/screens/settings/settings_screen.dart';
 import 'package:squadupv2/presentation/screens/settings/connect_device_screen.dart';
 import 'package:squadupv2/presentation/screens/settings/notification_settings_screen.dart';
 import 'package:squadupv2/presentation/screens/activities/activity_checkin_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// App routes constants
 class AppRoutes {
@@ -155,9 +155,9 @@ final appRouter = GoRouter(
 
 /// Auth guard redirect function
 Future<String?> _authGuard(BuildContext context, GoRouterState state) async {
-  final user = FirebaseAuth.instance.currentUser;
+  final session = Supabase.instance.client.auth.currentSession;
 
-  if (user == null) {
+  if (session == null) {
     // Not authenticated, redirect to login
     return AppRoutes.login;
   }

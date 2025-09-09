@@ -58,7 +58,8 @@ class OnboardingService {
     required List<Map<String, String>> messages,
   }) async {
     try {
-      final profileId = _authService.currentProfileId;
+      final profileId =
+          _authService.currentProfileId ?? await _authService.ensureProfile();
       if (profileId == null) {
         throw Exception('No profile ID found');
       }
@@ -69,11 +70,21 @@ class OnboardingService {
         body: {'messages': messages, 'profileId': profileId},
       );
 
-      if (response.data == null) {
+      final data = response.data;
+      if (data == null) {
         throw Exception('No response from AI assistant');
       }
 
-      return response.data as Map<String, dynamic>;
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+
+      // Try to coerce if possible
+      if (data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+
+      throw Exception('Unexpected AI response format');
     } catch (e) {
       _logger.error('Failed to get AI onboarding response', e);
       // Return a fallback response

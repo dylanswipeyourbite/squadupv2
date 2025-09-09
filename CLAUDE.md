@@ -15,7 +15,6 @@ What to keep top‑of‑mind
   - Clean layering: presentation → application → domain ← infrastructure
   - Repository pattern; domain services are pure; DI via `lib/core/service_locator.dart`
   - RLS-aware data access; never bypass security in client code
-  - **Supabase Auth** for all authentication (migrated from Firebase Auth)
 - Code and UI style
   - Follow naming, null safety, and formatting rules in the development guidelines
   - No direct Supabase calls in UI; use services/repositories

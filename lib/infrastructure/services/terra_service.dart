@@ -109,7 +109,7 @@ class TerraService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'reference_id': user.uid,
+          'reference_id': user.id,
           'providers': [provider.value],
           'auth_success_redirect_url': 'squadup://terra/success',
           'auth_failure_redirect_url': 'squadup://terra/failure',
@@ -143,7 +143,7 @@ class TerraService {
           'x-api-key': Environment.terraApiKey,
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'reference_id': user.uid}),
+        body: jsonEncode({'reference_id': user.id}),
       );
 
       if (response.statusCode == 200) {
@@ -165,7 +165,7 @@ class TerraService {
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/userInfo?reference_id=${user.uid}'),
+        Uri.parse('$_baseUrl/userInfo?reference_id=${user.id}'),
         headers: {
           'dev-id': Environment.terraDevId,
           'x-api-key': Environment.terraApiKey,
@@ -218,7 +218,7 @@ class TerraService {
     try {
       final response = await http.get(
         Uri.parse(
-          '$_baseUrl/activity?reference_id=${user.uid}'
+          '$_baseUrl/activity?reference_id=${user.id}'
           '&start_date=${start.toIso8601String()}'
           '&end_date=${end.toIso8601String()}'
           '&limit=$limit',
@@ -268,7 +268,7 @@ class TerraService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'reference_id': user.uid,
+          'reference_id': user.id,
           'start_date': startDate.toIso8601String(),
           'end_date': endDate.toIso8601String(),
         }),

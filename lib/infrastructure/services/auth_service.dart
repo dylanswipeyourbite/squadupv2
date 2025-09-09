@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:squadupv2/core/service_locator.dart';
 import 'package:squadupv2/core/event_bus.dart';
@@ -7,8 +6,8 @@ import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 /// Authentication events
 class AuthStateChangedEvent extends AppEvent {
-  final firebase_auth.User? user;
-  AuthStateChangedEvent(this.user);
+  final Session? session;
+  AuthStateChangedEvent(this.session);
 }
 
 class AuthErrorEvent extends AppEvent {
@@ -16,137 +15,102 @@ class AuthErrorEvent extends AppEvent {
   AuthErrorEvent(this.message);
 }
 
-/// Authentication service handling Firebase Auth and Supabase session bridging
+/// Authentication service handling Supabase Auth
 class AuthService {
-  final firebase_auth.FirebaseAuth _firebaseAuth =
-      firebase_auth.FirebaseAuth.instance;
   final SupabaseClient _supabase = locator<SupabaseClient>();
   final EventBus _eventBus = locator<EventBus>();
 
-  StreamSubscription<firebase_auth.User?>? _authStateSubscription;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
-  /// Current Firebase user
-  firebase_auth.User? get currentUser => _firebaseAuth.currentUser;
+  /// Current Supabase session
+  Session? get currentSession => _supabase.auth.currentSession;
+  User? get currentUser => _supabase.auth.currentUser;
+  String? get currentUserId => _supabase.auth.currentUser?.id;
 
   /// Stream of auth state changes
-  Stream<firebase_auth.User?> get authStateChanges =>
-      _firebaseAuth.authStateChanges();
+  Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
 
   /// Initialize auth service and set up listeners
   void initialize() {
-    _authStateSubscription = _firebaseAuth.authStateChanges().listen(
-      (user) async {
-        _eventBus.fire(AuthStateChangedEvent(user));
-
-        if (user != null) {
-          // Bridge Firebase session to Supabase
-          await _bridgeToSupabase(user);
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen(
+      (data) async {
+        _eventBus.fire(AuthStateChangedEvent(data.session));
+        if (data.session != null) {
+          await ensureProfile().catchError((_) => null);
         } else {
-          // Sign out from Supabase as well
-          await _supabase.auth.signOut();
+          _currentProfileId = null;
         }
       },
       onError: (error) {
         _eventBus.fire(AuthErrorEvent(error.toString()));
+        return null;
       },
     );
   }
 
   /// Sign up with email and password
-  Future<firebase_auth.User?> signUp({
+  Future<User?> signUp({
     required String email,
     required String password,
     required String displayName,
   }) async {
     try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+      await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {'display_name': displayName},
       );
 
-      // Update display name
-      if (credential.user != null) {
-        await credential.user!.updateDisplayName(displayName);
-        await credential.user!.reload();
-
-        // Bridge to Supabase
-        await _bridgeToSupabase(credential.user!);
+      // If signup didn't create a session (e.g., email confirmation disabled), sign in immediately
+      if (_supabase.auth.currentSession == null) {
+        final signInRes = await _supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+        if (signInRes.user == null) {
+          throw AuthException('Sign in after signup failed');
+        }
       }
 
-      return credential.user;
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
+      // Ensure profile now that we have a session/user
+      await ensureProfile().catchError((_) => null);
+
+      return _supabase.auth.currentUser;
+    } on AuthException catch (e) {
+      throw _mapSupabaseAuthException(e);
     }
   }
 
   /// Sign in with email and password
-  Future<firebase_auth.User?> signIn({
+  Future<User?> signIn({
     required String email,
     required String password,
   }) async {
     try {
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+      final res = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
-
-      if (credential.user != null) {
-        // Bridge to Supabase
-        await _bridgeToSupabase(credential.user!);
+      if (res.user != null) {
+        await ensureProfile().catchError((_) => null);
       }
-
-      return credential.user;
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
+      return res.user;
+    } on AuthException catch (e) {
+      throw _mapSupabaseAuthException(e);
     }
   }
 
   /// Sign out
   Future<void> signOut() async {
-    await Future.wait([_firebaseAuth.signOut(), _supabase.auth.signOut()]);
+    await _supabase.auth.signOut();
   }
 
   /// Send password reset email
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
-    }
-  }
-
-  /// Bridge Firebase session to Supabase
-  Future<void> _bridgeToSupabase(firebase_auth.User user) async {
-    try {
-      final idToken = await user.getIdToken();
-
-      // Call Supabase Edge Function to bridge the session
-      final response = await _supabase.functions.invoke(
-        'bridge-firebase-session',
-        body: {
-          'idToken': idToken,
-          'uid': user.uid,
-          'email': user.email,
-          'displayName': user.displayName,
-        },
-      );
-
-      if (response.status != 200) {
-        throw Exception('Failed to bridge session: ${response.data}');
-      }
-
-      // The Edge Function returns session data and profile_id
-      final responseData = response.data as Map<String, dynamic>;
-      final sessionData = responseData['session'] as Map<String, dynamic>;
-
-      // For now, we'll just store the profile ID
-      // In production, you would set a proper Supabase session
-
-      // Store the profile ID for quick access
-      _currentProfileId = responseData['profile_id'];
-    } catch (e) {
-      logger.error('Error bridging to Supabase', e);
-      _eventBus.fire(AuthErrorEvent('Failed to sync with server'));
+      await _supabase.auth.resetPasswordForEmail(email);
+    } on AuthException catch (e) {
+      throw _mapSupabaseAuthException(e);
     }
   }
 
@@ -154,25 +118,88 @@ class AuthService {
   String? _currentProfileId;
   String? get currentProfileId => _currentProfileId;
 
-  /// Map Firebase exceptions to user-friendly messages
-  String _mapFirebaseAuthException(firebase_auth.FirebaseAuthException e) {
+  /// Fetch and cache current profile id
+  Future<String?> ensureProfile() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return null;
+
+      // First try by user_id (preferred)
+      try {
+        final existing = await _supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (existing != null) {
+          _currentProfileId = existing['id'] as String?;
+          return _currentProfileId;
+        }
+
+        final inserted = await _supabase
+            .from('profiles')
+            .insert({
+              'user_id': user.id,
+              'email': user.email,
+              'display_name':
+                  user.userMetadata?['display_name'] ??
+                  user.email?.split('@').first ??
+                  'Runner',
+            })
+            .select('id')
+            .single();
+
+        _currentProfileId = inserted['id'] as String?;
+        return _currentProfileId;
+      } catch (e) {
+        // If user_id column does not exist on remote yet, fall back to email
+        final existingByEmail = await _supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', user.email as Object)
+            .maybeSingle();
+
+        if (existingByEmail != null) {
+          _currentProfileId = existingByEmail['id'] as String?;
+          return _currentProfileId;
+        }
+
+        final insertedByEmail = await _supabase
+            .from('profiles')
+            .insert({
+              'email': user.email,
+              'display_name':
+                  user.userMetadata?['display_name'] ??
+                  user.email?.split('@').first ??
+                  'Runner',
+            })
+            .select('id')
+            .single();
+
+        _currentProfileId = insertedByEmail['id'] as String?;
+        return _currentProfileId;
+      }
+    } catch (e) {
+      logger.error('Failed to ensure profile', e);
+      rethrow;
+    }
+  }
+
+  String _mapSupabaseAuthException(AuthException e) {
     switch (e.code) {
-      case 'user-not-found':
-        return 'No user found with this email';
-      case 'wrong-password':
-        return 'Incorrect password';
-      case 'email-already-in-use':
-        return 'An account already exists with this email';
-      case 'invalid-email':
+      case 'invalid_credentials':
+        return 'Incorrect email or password';
+      case 'invalid_email':
         return 'Please enter a valid email address';
-      case 'weak-password':
+      case 'user_already_exists':
+        return 'An account already exists with this email';
+      case 'weak_password':
         return 'Password should be at least 6 characters';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection';
-      case 'too-many-requests':
+      case 'over_request_rate_limit':
         return 'Too many attempts. Please try again later';
       default:
-        return e.message ?? 'An error occurred. Please try again';
+        return e.message;
     }
   }
 

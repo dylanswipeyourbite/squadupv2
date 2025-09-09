@@ -4,6 +4,14 @@
 
 **Use GetIt for all dependency injection and Provider only for UI state propagation.**
 
+## Authentication Migration
+
+**SquadUp has migrated from Firebase Auth to Supabase Auth for unified authentication.**
+- All authentication flows now use `Supabase.instance.client.auth`
+- User profiles linked via `auth.users.id` instead of Firebase UID
+- Session management handled directly by Supabase Auth
+- RLS policies updated to use `auth.uid()` function
+
 ### Why This Approach?
 
 1. **Single Source of Truth**: GetIt manages all dependencies
@@ -70,30 +78,27 @@ Future<void> setupServiceLocator() async {
 ```dart
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:squadup/core/service_locator.dart';
 import 'package:squadup/core/theme/squadup_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'firebase_options.dart';
 import 'core/constants/environment.dart';
 import 'core/router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize all services
-  await Future.wait([
-    Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ),
-    Supabase.initialize(
-      url: Environment.supabaseUrl,
-      anonKey: Environment.supabaseAnonKey,
-    ),
-  ]);
+  // Initialize Supabase (now handles auth directly)
+  await Supabase.initialize(
+    url: Environment.supabaseUrl,
+    anonKey: Environment.supabaseAnonKey,
+  );
   
   // Setup dependency injection
   await setupServiceLocator();
+  
+  // Initialize auth service
+  final auth = locator<AuthService>();
+  auth.initialize();
   
   runApp(const SquadUpApp());
 }
