@@ -130,8 +130,8 @@ class ChatRepositoryImpl implements ChatRepository {
         for (final state in presence) {
           if (state.presences.isNotEmpty) {
             final payload = state.presences.first.payload;
-            if (payload?['typing'] == true && payload?['user_id'] != null) {
-              typingUsers.add(payload!['user_id'] as String);
+            if (payload['typing'] == true) {
+              typingUsers.add(payload['user_id'] as String);
             }
           }
         }
@@ -175,11 +175,39 @@ class ChatRepositoryImpl implements ChatRepository {
               value: squadId,
             ),
             callback: (payload) async {
-              // Fetch full message with joins via edge function
-              final message = await _fetchSingleMessage(
-                payload.newRecord['id'] as String,
-              );
-              _messageStreams[squadId]?.add(message);
+              try {
+                final messageId = payload.newRecord['id'] as String;
+                final profileId = payload.newRecord['profile_id'] as String;
+
+                // Get current user's profile ID
+                final currentUser = _supabase.auth.currentUser;
+                if (currentUser != null) {
+                  try {
+                    final currentProfile = await _supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('user_id', currentUser.id)
+                        .single();
+
+                    // Skip if this is the current user's message (we already have it)
+                    if (currentProfile['id'] == profileId) {
+                      return;
+                    }
+                  } catch (e) {
+                    // User profile not found - continue with fetching the message
+                  }
+                }
+
+                // Small delay to ensure message is fully committed
+                await Future.delayed(const Duration(milliseconds: 500));
+
+                // Fetch full message with joins via edge function
+                final message = await _fetchSingleMessage(messageId);
+                _messageStreams[squadId]?.add(message);
+              } catch (e) {
+                print('Error fetching new message in real-time: $e');
+                // Ignore the error - the message will be loaded on next refresh
+              }
             },
           )
           .subscribe();
