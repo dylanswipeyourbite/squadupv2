@@ -14,7 +14,6 @@ What to keep top‑of‑mind
 - Architecture principles
   - Clean layering: presentation → application → domain ← infrastructure
   - Repository pattern; domain services are pure; DI via `lib/core/service_locator.dart`
-  - RLS-aware data access; never bypass security in client code
   - **Supabase Auth** for all authentication (migrated from Firebase Auth)
   - Backend Security Approach
     - Use Supabase Edge functions for all data access and security checks, as detailed in `docs/edge_functions_security_migration.md`.

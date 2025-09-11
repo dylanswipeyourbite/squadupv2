@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:squadupv2/domain/services/feedback_service.dart';
+import 'package:squadupv2/domain/repositories/squad_repository.dart';
+import 'package:squadupv2/infrastructure/repositories/squad_repository_impl.dart';
 import 'package:squadupv2/infrastructure/services/auth_service.dart';
 import 'package:squadupv2/infrastructure/services/terra_service.dart';
 import 'package:squadupv2/infrastructure/services/chat_service.dart';
@@ -31,6 +33,9 @@ Future<void> setupServiceLocator() async {
   locator.registerLazySingleton(() => TerraService());
   locator.registerLazySingleton(() => DeepLinkService());
   locator.registerLazySingleton(() => OnboardingService());
+
+  // Repositories
+  locator.registerLazySingleton<SquadRepository>(() => SquadRepositoryImpl());
 
   // Domain services
   locator.registerLazySingleton(() => ActivityService());

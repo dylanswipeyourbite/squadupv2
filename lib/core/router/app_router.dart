@@ -182,8 +182,9 @@ Future<String?> _authGuard(BuildContext context, GoRouterState state) async {
 
   if (!hasSquad &&
       state.matchedLocation != AppRoutes.createSquad &&
-      state.matchedLocation != AppRoutes.joinSquad) {
-    // No squad and not on squad creation/join pages
+      state.matchedLocation != AppRoutes.joinSquad &&
+      state.matchedLocation != AppRoutes.squadChoice) {
+    // No squad and not on squad creation/join/choice pages
     return AppRoutes.squadChoice;
   }
 
