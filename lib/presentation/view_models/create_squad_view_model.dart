@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:squadupv2/core/service_locator.dart';
 import 'package:squadupv2/domain/repositories/squad_repository.dart';
 import 'package:squadupv2/domain/services/feedback_service.dart';
-import 'package:squadupv2/core/router/app_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// ViewModel for creating a squad
@@ -93,12 +92,16 @@ class CreateSquadViewModel extends ChangeNotifier {
         // Complete onboarding
         await prefs.setBool('hasCompletedOnboarding', true);
         if (context.mounted) {
-          context.go(AppRoutes.home);
+          // Navigate to the squad chat (ObsessionStreamScreen)
+          context.go(
+            '/squads/chat/${squad.id}',
+            extra: {'squadName': squad.name},
+          );
         }
       } else {
-        // Go to squad details
+        // Not onboarding - go back to squads overview
         if (context.mounted) {
-          context.go('/squads/details/${squad.id}');
+          context.go('/squads');
         }
       }
     } catch (e) {

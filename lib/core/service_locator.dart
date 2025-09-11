@@ -6,7 +6,6 @@ import 'package:squadupv2/domain/repositories/squad_repository.dart';
 import 'package:squadupv2/infrastructure/repositories/squad_repository_impl.dart';
 import 'package:squadupv2/infrastructure/services/auth_service.dart';
 import 'package:squadupv2/infrastructure/services/terra_service.dart';
-import 'package:squadupv2/infrastructure/services/chat_service.dart';
 import 'package:squadupv2/infrastructure/services/activity_service.dart';
 import 'package:squadupv2/infrastructure/services/squad_service.dart';
 import 'package:squadupv2/infrastructure/services/race_service.dart';
@@ -17,6 +16,11 @@ import 'package:squadupv2/presentation/view_models/login_view_model.dart';
 import 'package:squadupv2/presentation/view_models/signup_view_model.dart';
 import 'package:squadupv2/presentation/view_models/onboarding_chat_view_model.dart';
 import 'package:squadupv2/infrastructure/services/logger_service.dart';
+import 'package:squadupv2/domain/repositories/chat_repository.dart';
+import 'package:squadupv2/infrastructure/repositories/chat_repository_impl.dart';
+import 'package:squadupv2/presentation/view_models/chat_view_model.dart';
+import 'package:squadupv2/presentation/view_models/squad_list_view_model.dart';
+import 'package:squadupv2/domain/services/chat_service.dart' as domain;
 
 final GetIt locator = GetIt.instance;
 
@@ -36,22 +40,21 @@ Future<void> setupServiceLocator() async {
 
   // Repositories
   locator.registerLazySingleton<SquadRepository>(() => SquadRepositoryImpl());
+  locator.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl());
 
   // Domain services
   locator.registerLazySingleton(() => ActivityService());
   locator.registerLazySingleton(() => SquadService());
   locator.registerLazySingleton(() => RaceService());
-
-  // Register FeedbackService with interface for testing
-  locator.registerLazySingleton<IFeedbackService>(() => FeedbackServiceImpl());
-
-  // Chat Service - Factory because each chat needs its own instance
-  locator.registerFactory(
-    () => ChatService(
-      supabase: locator<SupabaseClient>(),
+  locator.registerLazySingleton(
+    () => domain.ChatService(
+      repository: locator<ChatRepository>(),
       eventBus: locator<EventBus>(),
     ),
   );
+
+  // Register FeedbackService with interface for testing
+  locator.registerLazySingleton<IFeedbackService>(() => FeedbackServiceImpl());
 
   // ViewModels - Register as factories with parameters
   locator.registerFactory(() => LoginViewModel(locator<AuthService>()));
@@ -59,6 +62,20 @@ Future<void> setupServiceLocator() async {
   locator.registerFactory(
     () => OnboardingChatViewModel(locator<OnboardingService>()),
   );
+
+  // Chat ViewModel - Factory with parameters
+  locator.registerFactoryParam<ChatViewModel, String, String>(
+    (squadId, squadName) => ChatViewModel(
+      squadId: squadId,
+      squadName: squadName,
+      chatService: locator<domain.ChatService>(),
+      authService: locator<AuthService>(),
+      feedbackService: locator<IFeedbackService>(),
+    ),
+  );
+
+  // Squad List ViewModel - Singleton to share across screens
+  locator.registerLazySingleton(() => SquadListViewModel());
 
   // Logger service - singleton
   locator.registerLazySingleton<LoggerService>(() => LoggerService());

@@ -86,12 +86,16 @@ class JoinSquadViewModel extends ChangeNotifier {
         // Complete onboarding
         await prefs.setBool('hasCompletedOnboarding', true);
         if (context.mounted) {
-          context.go(AppRoutes.home);
+          // Navigate to the joined squad's chat
+          context.go(
+            '/squads/chat/${squad.id}',
+            extra: {'squadName': squad.name},
+          );
         }
       } else {
-        // Go to squad chat
+        // Not onboarding - go back to squads overview
         if (context.mounted) {
-          context.go('/squads/chat/${squad.id}');
+          context.go('/squads');
         }
       }
     } catch (e) {

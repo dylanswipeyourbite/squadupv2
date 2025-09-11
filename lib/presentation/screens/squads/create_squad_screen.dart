@@ -34,12 +34,16 @@ class _CreateSquadView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Create Squad'),
         backgroundColor: Colors.transparent,
-        leading: isOnboarding
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/onboarding/squad-choice'),
-              )
-            : null,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (isOnboarding) {
+              context.go('/onboarding/squad-choice');
+            } else {
+              context.go('/squads');
+            }
+          },
+        ),
       ),
       body: SafeArea(
         child: Form(

@@ -4,6 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:squadupv2/core/router/app_router.dart';
 import 'package:squadupv2/core/theme/squadup_theme.dart';
+import 'package:squadupv2/core/service_locator.dart';
+import 'package:squadupv2/domain/repositories/squad_repository.dart';
+import 'package:squadupv2/infrastructure/services/logger_service.dart';
 
 /// Splash screen that handles initial routing logic
 class SplashScreen extends StatefulWidget {
@@ -14,6 +17,9 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final _squadRepository = locator<SquadRepository>();
+  final _logger = locator<LoggerService>();
+
   @override
   void initState() {
     super.initState();
@@ -36,35 +42,51 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Check onboarding status
+    // Check onboarding status from database/preferences
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    final hasCompletedOnboarding =
-        prefs.getBool('hasCompletedOnboarding') ?? false;
 
-    if (!hasCompletedOnboarding) {
-      // Go to onboarding
-      if (mounted) {
-        context.go(AppRoutes.welcome);
+    // For existing users, check database for onboarding status and squads
+    try {
+      // Get user's squads from database
+      final squads = await _squadRepository.getUserSquads();
+      final hasSquads = squads.isNotEmpty;
+
+      // Update SharedPreferences to match database state
+      await prefs.setBool('hasSquad', hasSquads);
+
+      // Check if user has completed onboarding
+      // If they have squads, they must have completed onboarding
+      final hasCompletedOnboarding =
+          prefs.getBool('hasCompletedOnboarding') ?? hasSquads;
+
+      if (!hasCompletedOnboarding) {
+        // New user - go to onboarding
+        if (mounted) {
+          context.go(AppRoutes.welcome);
+        }
+        return;
       }
-      return;
-    }
 
-    // Check if user has a squad
-    if (!mounted) return;
-    final hasSquad = prefs.getBool('hasSquad') ?? false;
-
-    if (!hasSquad) {
-      // No squad, go to squad choice
-      if (mounted) {
-        context.go(AppRoutes.squadChoice);
+      // User has completed onboarding
+      if (!hasSquads) {
+        // No squad yet, go to squad choice
+        if (mounted) {
+          context.go(AppRoutes.squadChoice);
+        }
+        return;
       }
-      return;
-    }
 
-    // All set, go to home
-    if (mounted) {
-      context.go(AppRoutes.home);
+      // User has squads - navigate to squads overview
+      if (mounted) {
+        context.go('/squads');
+      }
+    } catch (e) {
+      _logger.error('Error checking user status', e);
+      // On error, fall back to default behavior
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
     }
   }
 

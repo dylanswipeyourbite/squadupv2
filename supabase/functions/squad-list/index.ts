@@ -39,6 +39,17 @@ serve(async (req) => {
       throw new Error('Invalid token')
     }
 
+    // Get user's profile
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      throw new Error('User profile not found')
+    }
+
     // Get all squads the user is a member of
     const { data: memberships, error: memberError } = await supabaseClient
       .from('squad_members')
@@ -62,7 +73,7 @@ serve(async (req) => {
           updated_at
         )
       `)
-      .eq('profile_id', user.id)
+      .eq('profile_id', profile.id)
 
     if (memberError) {
       console.error('Error fetching memberships:', memberError)

@@ -13,6 +13,7 @@ import 'package:squadupv2/presentation/screens/squads/create_squad_screen.dart';
 import 'package:squadupv2/presentation/screens/squads/join_squad_screen.dart';
 import 'package:squadupv2/presentation/screens/squads/squad_detail_screen.dart';
 import 'package:squadupv2/presentation/screens/squads/squad_main_screen.dart';
+import 'package:squadupv2/presentation/screens/squads/squads_overview_screen.dart';
 import 'package:squadupv2/presentation/screens/races/add_race_screen.dart';
 import 'package:squadupv2/presentation/screens/settings/settings_screen.dart';
 import 'package:squadupv2/presentation/screens/settings/connect_device_screen.dart';
@@ -30,6 +31,7 @@ class AppRoutes {
   static const whyRun = '/onboarding/why-run';
   static const squadChoice = '/onboarding/squad-choice';
   static const home = '/home';
+  static const squadsOverview = '/squads';
   static const createSquad = '/squads/create';
   static const joinSquad = '/squads/join';
   static const squadDetail = '/squads/details/:squadId';
@@ -81,6 +83,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       builder: (context, state) => const HomeScreen(),
+      redirect: _authGuard,
+    ),
+    GoRoute(
+      path: AppRoutes.squadsOverview,
+      builder: (context, state) => const SquadsOverviewScreen(),
       redirect: _authGuard,
     ),
     GoRoute(
